@@ -36,6 +36,7 @@ unsigned short  height, width;
 unsigned int check_interval = CHK_INTERVAL;
 int updates_available = FALSE;
 char *script;
+char *aur_helper;
 
 /*
  * M A I N
@@ -63,6 +64,14 @@ main(int argc, char **argv)
     /* Set program options */
     DAProgramOption options[] = {
         {
+            "-a",
+            "--aur-helper",
+            "AUR helper (e.g. yay). Default none.",
+            DOString,
+            False,
+            {&aur_helper}
+        },
+        {
             "-c",
             "--check-interval",
             "Check interval in minutes. Default 10 minutes.",
@@ -75,7 +84,7 @@ main(int argc, char **argv)
     /* provide standard command-line options */
     DAParseArguments(
         argc, argv, /* Where the options come from */
-        options, 1, /* Our list with options */
+        options, 2, /* Our list with options */
         "This is dockapp watch for available updates "
         "in Arch Linux packages.\n",
         VERSION);
@@ -136,6 +145,13 @@ update()
     if (updates_available == TRUE) {
         XSelectInput(DAGetDisplay(NULL), DAGetWindow(), NoEventMask);
 
+	if (aur_helper) {
+	    /* pass AUR helper as script argument */
+	    size_t length = strlen(script);
+	    script[length] = ' ';
+	    script[length+1] = '\0';
+	    strcat(script, aur_helper);
+	}
         int ret = system(script);
 
         if (WEXITSTATUS(ret) == 0) {
@@ -161,6 +177,10 @@ check_for_updates()
 
     /* Read output from command */
     FILE *fp = popen("checkupdates", "r");
+    if (aur_helper) {
+	/* also check AUR updates */
+	fprintf(fp, "%s -Qum\n", aur_helper);
+    }
     if (fgets(res, MAX, fp) != NULL) {
         updates_available = TRUE;
         DASetShape(arch_mask);
