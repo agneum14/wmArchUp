@@ -23,6 +23,7 @@ program checks for updates it change its icon in a gear. If you right click the
 Arch Linux logo icon then it immediately starts a check for updates. If you left
 click the Arch Linux log the it opens an xterm window and start a system update.
 Also, you can specify an AUR helper with -a or --aur-helper.
+And your preferred terminal emulator with -t or --terminal-emulator.
 
 ***************
 *** OPTIONS ***
@@ -30,7 +31,9 @@ Also, you can specify an AUR helper with -a or --aur-helper.
 
 This program has the following command line options
 -a <string> : AUR helper (e.g. yay). Default none.
---aur-helper <number> : Same as -a
+--aur-helper <string> : Same as -a
+-t <string> : Terminal to launch system update. Default xterm.
+--terminal-emulator <string> : Same as -t
 -c <number> : Sets the checking time interval in minutes. Default is 10 minutes.
 --check-interval <number> : Same as -c
 

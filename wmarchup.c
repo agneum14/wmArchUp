@@ -37,6 +37,7 @@ unsigned int check_interval = CHK_INTERVAL;
 int updates_available = FALSE;
 char *script;
 char *aur_helper;
+char *term;
 
 /*
  * M A I N
@@ -72,6 +73,14 @@ main(int argc, char **argv)
             {&aur_helper}
         },
         {
+            "-t",
+            "--terminal-emulator",
+            "Terminal to launch system update. Default xterm.",
+            DOString,
+            False,
+            {&term}
+        },
+        {
             "-c",
             "--check-interval",
             "Check interval in minutes. Default 10 minutes.",
@@ -84,7 +93,7 @@ main(int argc, char **argv)
     /* provide standard command-line options */
     DAParseArguments(
         argc, argv, /* Where the options come from */
-        options, 2, /* Our list with options */
+        options, 3, /* Our list with options */
         "This is dockapp watch for available updates "
         "in Arch Linux packages.\n",
         VERSION);
@@ -139,19 +148,22 @@ main(int argc, char **argv)
     exit(EXIT_SUCCESS);
 }
 
+void add_arg(char *arg, char *def_arg) {
+    size_t LENGTH = strlen(script);
+    script[LENGTH] = ' ';
+    script[LENGTH+1] = '\0';
+    if (arg) strcat(script, arg);
+    else strcat(script, def_arg);
+}
+
 void
 update()
 {
     if (updates_available == TRUE) {
         XSelectInput(DAGetDisplay(NULL), DAGetWindow(), NoEventMask);
 
-	if (aur_helper) {
-	    /* pass AUR helper as script argument */
-	    size_t length = strlen(script);
-	    script[length] = ' ';
-	    script[length+1] = '\0';
-	    strcat(script, aur_helper);
-	}
+    add_arg(aur_helper, "pacman");
+    add_arg(term, "xterm");
         int ret = system(script);
 
         if (WEXITSTATUS(ret) == 0) {
@@ -176,12 +188,18 @@ check_for_updates()
     DASetPixmap(checking);
 
     /* Read output from command */
-    FILE *fp = popen("checkupdates", "r");
+    FILE *fp = popen("checkupdates 2>&1 | head -n 1", "r");
+    /* check for AUR updates */
+    int aur_update = 1;
     if (aur_helper) {
-	/* also check AUR updates */
-	fprintf(fp, "%s -Qum\n", aur_helper);
+    char command[50];
+    strcpy(command, aur_helper);
+    strcat(command, " -Qum 2>&1 | head -n 1");
+    FILE *fp2 = popen(command, "r");
+    if (fgets(res, MAX, fp2) != NULL) aur_update = 0;
+    pclose(fp2);
     }
-    if (fgets(res, MAX, fp) != NULL) {
+    if (fgets(res, MAX, fp) != NULL || aur_update == 0) {
         updates_available = TRUE;
         DASetShape(arch_mask);
         DASetPixmap(arch);
@@ -191,9 +209,7 @@ check_for_updates()
         DASetPixmap(arch_bw);
     }
 
-    if (pclose(fp) != 0) {
-        fprintf(stderr, " Error: Failed to close command stream \n");
-    }
+    pclose(fp);
 
     XSelectInput(DAGetDisplay(NULL), DAGetWindow(),
                  ButtonPressMask | ButtonReleaseMask);

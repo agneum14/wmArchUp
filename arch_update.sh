@@ -1,10 +1,10 @@
 #!/bin/sh
 
-if [ $# -eq 1 ]
+if [ $1 == "pacman" ]
 then
-    helper=$1
+    helper="sudo pacman"
 else
-    helper='sudo pacman'
+    helper=$1
 fi
 
-$TERM -e sh -c "$helper -Syu; cd ~; $SHELL"
+$2 -e sh -c "$helper -Syu; cd ~; $SHELL"
