@@ -183,27 +183,35 @@ check_for_updates()
     XSelectInput(DAGetDisplay(NULL), DAGetWindow(), NoEventMask);
     char res[MAX];
 
-
     DASetShape(arch_gray_mask);
     DASetPixmap(arch_gray);
+
 
     /* Read output from command */
     FILE *fp = popen("checkupdates 2>&1 | head -n 1", "r");
     /* check for AUR updates */
-    int aur_update = 1;
+    int aur_update = FALSE;
     if (aur_helper) {
     char command[50];
     strcpy(command, aur_helper);
     strcat(command, " -Qum 2>&1 | head -n 1");
     FILE *fp2 = popen(command, "r");
-    if (fgets(res, MAX, fp2) != NULL) aur_update = 0;
+    if (fgets(res, MAX, fp2) != NULL) aur_update = TRUE;
     pclose(fp2);
     }
-    if (fgets(res, MAX, fp) != NULL || aur_update == 0) {
+    if (fgets(res, MAX, fp) != NULL || aur_update) {
+        // check updates every 5 seconds if no internet (like at computer start)
+        if (!strncmp(res, "==> ERROR", 8)) {
+            sleep(5);
+            check_for_updates();
+        }
+        else {
         updates_available = TRUE;
         DASetShape(arch_red_mask);
         DASetPixmap(arch_red);
-    } else {
+        }
+    }
+    else {
         updates_available = FALSE;
         DASetShape(arch_green_mask);
         DASetPixmap(arch_green);
