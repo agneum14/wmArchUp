@@ -7,9 +7,9 @@
 #include <sys/wait.h>
 
 /* Include the pixmap to use */
-#include "archlinux.xpm"
-#include "archlinux_bw.xpm"
-#include "loading.xpm"
+#include "archlinux_red.xpm"
+#include "archlinux_green.xpm"
+#include "archlinux_gray.xpm"
 
 #define TRUE            1
 #define FALSE           0
@@ -31,7 +31,7 @@ char *get_update_script();
 /*
  * Global variables
  */
-Pixmap arch, arch_mask, arch_bw, arch_bw_mask, checking, checking_mask;
+Pixmap arch_red, arch_red_mask, arch_green, arch_green_mask, arch_gray, arch_gray_mask;
 unsigned short  height, width;
 unsigned int check_interval = CHK_INTERVAL;
 int updates_available = FALSE;
@@ -107,23 +107,23 @@ main(int argc, char **argv)
     DAInitialize("", "WMArchUp", 56, 56, argc, argv);
 
     DAMakePixmapFromData(
-        archlinux,
-        &arch,
-        &arch_mask,
+        archlinux_red,
+        &arch_red,
+        &arch_red_mask,
         &height,
         &width);
 
     DAMakePixmapFromData(
-        archlinux_bw,
-        &arch_bw,
-        &arch_bw_mask,
+        archlinux_green,
+        &arch_green,
+        &arch_green_mask,
         &height,
         &width);
 
     DAMakePixmapFromData(
-        loading,
-        &checking,
-        &checking_mask,
+        archlinux_gray,
+        &arch_gray,
+        &arch_gray_mask,
         &height,
         &width);
 
@@ -168,8 +168,8 @@ update()
 
         if (WEXITSTATUS(ret) == 0) {
             updates_available = FALSE;
-            DASetShape(arch_bw_mask);
-            DASetPixmap(arch_bw);
+            DASetShape(arch_green_mask);
+            DASetPixmap(arch_green);
         }
 
         XSelectInput(DAGetDisplay(NULL), DAGetWindow(),
@@ -184,8 +184,8 @@ check_for_updates()
     char res[MAX];
 
 
-    DASetShape(checking_mask);
-    DASetPixmap(checking);
+    DASetShape(arch_gray_mask);
+    DASetPixmap(arch_gray);
 
     /* Read output from command */
     FILE *fp = popen("checkupdates 2>&1 | head -n 1", "r");
@@ -201,12 +201,12 @@ check_for_updates()
     }
     if (fgets(res, MAX, fp) != NULL || aur_update == 0) {
         updates_available = TRUE;
-        DASetShape(arch_mask);
-        DASetPixmap(arch);
+        DASetShape(arch_red_mask);
+        DASetPixmap(arch_red);
     } else {
         updates_available = FALSE;
-        DASetShape(arch_bw_mask);
-        DASetPixmap(arch_bw);
+        DASetShape(arch_green_mask);
+        DASetPixmap(arch_green);
     }
 
     pclose(fp);
